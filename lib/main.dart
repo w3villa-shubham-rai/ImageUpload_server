@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
@@ -40,7 +39,9 @@ class _MyHomePageState extends State<MyHomePage> {
         await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (pickedfile != null) {
       image = File(pickedfile.path);
-      setState(() {});
+      setState(() {
+        uploadImage();
+      });
     } else {
       print("No Image Selected");
     }
@@ -50,30 +51,24 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       showSpiner = true;
     });
+    var headers = {
+      'Content-Type': 'application/json',
+      'Authorization':
+          'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoyLCJ0aW1lIjoxNjk4OTAzMjAxfQ.WNljZRXXQ9RnGDnYCU4jSqoiGWh7db_PtAVfgo0LBCA'
+    };
+    var request = http.MultipartRequest(
+        "PUT", Uri.parse('https://staging.simmpli.com/api/v1/profiles/2.json'));
 
-    var stream = new http.ByteStream(image!.openRead());
-    stream.cast();
-    var length = await image!.length();
-    var uri = Uri.parse('https://fakestoreapi.com/products');
+    request.files.add(
+        await http.MultipartFile.fromPath('profile[profile_pic]', image!.path));
+    request.headers.addAll(headers);
+    var response = await request.send().timeout(const Duration(seconds: 30));
 
-    var request = new http.MultipartRequest('POST', uri);
-
-    request.fields['title'] = "static tile check";
-
-    var multiport = new http.MultipartFile('image', stream, length);
-
-    request.files.add(multiport);
-    var responsce = await request.send();
-
-    if (responsce.statusCode == 200) {
+    print("responsce :${response.statusCode}");
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      print("responsce :$response ");
       setState(() {
-        showSpiner = false;
-      });
-      print("image uploaded");
-    } else {
-      print('failed');
-      setState(() {
-        showSpiner = false ;
+         showSpiner = true;
       });
     }
   }
@@ -84,7 +79,7 @@ class _MyHomePageState extends State<MyHomePage> {
       inAsyncCall: showSpiner,
       child: Scaffold(
         appBar: AppBar(
-          title: Text("image example"),
+          title: const Text("image example"),
         ),
         body: Center(
           child: Column(
@@ -97,7 +92,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
                 child: Container(
                     child: image == null
-                        ? Center(
+                        ? const Center(
                             child: Text('pick Image'),
                           )
                         : Container(
@@ -116,7 +111,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               GestureDetector(
                 onTap: () {
-                  uploadImage();
+                  // uploadImage();
                 },
                 child: Container(
                   height: 50,
